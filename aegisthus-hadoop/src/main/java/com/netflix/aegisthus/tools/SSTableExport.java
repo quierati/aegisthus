@@ -54,6 +54,8 @@ public class SSTableExport {
 	private static Options options = new Options();
 	private static final String ROWSIZE = "r";
 	private static final String COLUMN_NAME_TYPE = "c";
+	private static final String KEY_TYPE = "k";
+	private static final String VALUE_TYPE = "x";
 	private static final String OPT_COMP = "comp";
 	private static final String OPT_MAX_COLUMN_SIZE = "colSize";
 	private static final String OPT_VERSION = "v";
@@ -67,10 +69,20 @@ public class SSTableExport {
 		optCompression.setArgs(1);
 		options.addOption(optCompression);
 
+		Option optKeyType = new Option(KEY_TYPE, true,
+				"String indicating columns name types (AsciiType)");
+		optKeyType.setArgs(1);
+		options.addOption(optKeyType);
+
 		Option optColumnNameType = new Option(COLUMN_NAME_TYPE, true,
 				"String indicating columns name types (AsciiType)");
 		optColumnNameType.setArgs(1);
 		options.addOption(optColumnNameType);
+
+		Option optValueType = new Option(VALUE_TYPE, true,
+				"String indicating columns name types (AsciiType)");
+		optValueType.setArgs(1);
+		options.addOption(optValueType);
 
 		Option optVersion = new Option(OPT_VERSION, true, "file version (e.g ic or hf)");
 		optVersion.setArgs(1);
@@ -152,10 +164,29 @@ public class SSTableExport {
 			formatter.printHelp(usage, options);
 			System.exit(1);
 		}
+
 		Map<String, AbstractType> convertors = null;
+		convertors = new HashMap<String, AbstractType>();
+
+		if (cmd.hasOption(KEY_TYPE)) {
+			try {
+				convertors.put(SSTableScanner.KEY, TypeParser.parse(cmd.getOptionValue(KEY_TYPE)));
+			} catch (ConfigurationException e) {
+				System.err.println(e.getMessage());
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp(usage, options);
+				System.exit(1);
+			} catch (SyntaxException e) {
+				System.err.println(e.getMessage());
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp(usage, options);
+				System.exit(1);
+			}
+		}
+
+
 		if (cmd.hasOption(COLUMN_NAME_TYPE)) {
 			try {
-				convertors = new HashMap<String, AbstractType>();
 				convertors.put(SSTableScanner.COLUMN_NAME_KEY, TypeParser.parse(cmd.getOptionValue(COLUMN_NAME_TYPE)));
 			} catch (ConfigurationException e) {
 				System.err.println(e.getMessage());
@@ -169,6 +200,23 @@ public class SSTableExport {
 				System.exit(1);
 			}
 		}
+
+		if (cmd.hasOption(VALUE_TYPE)) {
+			try {
+				convertors.put(SSTableScanner.VALUE, TypeParser.parse(cmd.getOptionValue(VALUE_TYPE)));
+			} catch (ConfigurationException e) {
+				System.err.println(e.getMessage());
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp(usage, options);
+				System.exit(1);
+			} catch (SyntaxException e) {
+				System.err.println(e.getMessage());
+				HelpFormatter formatter = new HelpFormatter();
+				formatter.printHelp(usage, options);
+				System.exit(1);
+			}
+		}
+
 		Descriptor.Version version = null;
 		if (cmd.hasOption(OPT_VERSION)) {
 			version = new Descriptor.Version(cmd.getOptionValue(OPT_VERSION));

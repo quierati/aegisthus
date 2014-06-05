@@ -54,8 +54,10 @@ public class SSTableScanner extends SSTableReader implements Iterator<String> {
 	public static final String COLUMN_NAME_KEY = "$$CNK$$";
 	public static final String KEY = "$$KEY$$";
 	public static final String SUB_KEY = "$$SUB_KEY$$";
+	public static final String VALUE = "$$VALUE$$";
 
 	private AbstractType columnNameConvertor = null;
+	private AbstractType valueConvertor = null;
 
 	private Map<String, AbstractType> converters = Maps.newHashMap();
 	private AbstractType keyConvertor = null;
@@ -149,6 +151,7 @@ public class SSTableScanner extends SSTableReader implements Iterator<String> {
 		this.end = end;
 
 		this.columnNameConvertor = getConvertor(COLUMN_NAME_KEY);
+		this.valueConvertor = getConvertor(VALUE);
 		this.keyConvertor = getConvertor(KEY);
 	}
 
@@ -253,10 +256,12 @@ public class SSTableScanner extends SSTableReader implements Iterator<String> {
 			if (atom instanceof IColumn) {
 				IColumn column = (IColumn) atom;
 				String cn = convertColumnName(column.name());
+				String value = convertValue(column.value());
 				sb.append("[\"");
 				sb.append(cn);
 				sb.append("\", \"");
-				sb.append(getConvertor(cn).getString(column.value()));
+				sb.append(value);
+				//sb.append(getConvertor(cn).getString(column.value()));
 				sb.append("\", ");
 				sb.append(column.timestamp());
 
@@ -300,6 +305,10 @@ public class SSTableScanner extends SSTableReader implements Iterator<String> {
 
 	private String convertColumnName(ByteBuffer bb) {
 		return columnNameConvertor.getString(bb).replaceAll("[\\s\\p{Cntrl}]", " ").replace("\\", "\\\\").replace("\"", "\\\"");
+	}
+
+	private String convertValue(ByteBuffer bb) {
+		return valueConvertor.getString(bb).replaceAll("[\\s\\p{Cntrl}]", " ").replace("\\", "\\\\").replace("\"", "\\\"");
 	}
 
 	public long getErrorRowCount() {
